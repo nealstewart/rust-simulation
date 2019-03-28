@@ -1,16 +1,18 @@
 extern crate rand;
 extern crate ndarray;
+use std::{thread, time};
 use rand::Rng;
+mod vector2;
 
-type Vector2 = (i32, i32);
-
+#[derive(Copy, Clone)]
 struct Plant {
-    location: Vector2
+    location: vector2::Vector2
 }
 
+#[derive(Copy, Clone)]
 struct Bug {
     perception_distance: i32,
-    location: Vector2
+    location: vector2::Vector2
 }
 
 struct Simulation {
@@ -22,7 +24,7 @@ struct Simulation {
 const WIDTH: usize = 30;
 const HEIGHT: usize = 30;
 
-fn get_unused_location(locations: &Vec<Vector2>) -> Vector2 {
+fn get_unused_location(locations: &Vec<vector2::Vector2>) -> vector2::Vector2 {
     let mut rng = rand::thread_rng();
     loop {
         let location = (rng.gen_range(0, WIDTH) as i32, rng.gen_range(0, HEIGHT) as i32);
@@ -47,7 +49,7 @@ fn create_first_bugs(total_count: usize) -> Vec<Bug> {
 
     return locations.iter()
         .map(|p| Bug {
-            perception_distance: 3,
+            perception_distance: 2,
             location: *p
         })
         .collect();
@@ -55,7 +57,7 @@ fn create_first_bugs(total_count: usize) -> Vec<Bug> {
 
 fn create_first_plants(bugs: &Vec<Bug>, total_count: usize) -> Vec<Plant> {
     let mut count = total_count;
-    let mut all_points: Vec<Vector2> = bugs.iter().map(|b| b.location).collect();
+    let mut all_points: Vec<vector2::Vector2> = bugs.iter().map(|b| b.location).collect();
 
     while count > 0 {
         let location = get_unused_location(&all_points);
@@ -83,36 +85,103 @@ fn create_simulation() -> Simulation {
     }
 }
 
-fn sum_point(point: Vector2) -> i32 {
-    return point.0.abs() + point.1.abs();
+fn find_closest_plant(bug: &Bug, plants: &Vec<Plant>) -> Option<Plant> {
+    let mut distances: Vec<(Plant, i32)> = plants
+        .into_iter()
+        .cloned()
+        .map(|p| (p, vector2::sum_point(vector2::subtract(p.location, bug.location))))
+        .filter(|i| i.1 < bug.perception_distance)
+        .collect();
+
+    if distances.len() == 0 {
+        return None;
+    }
+
+    distances.sort_by(|a, b| a.1.cmp(&b.1));
+
+    return Some(distances[0].0);
 }
 
-fn subtract(a: Vector2, b: Vector2) -> Vector2 {
-    return (a.0 - b.0, a.1 - b.1);
+fn get_all_used_points(simulation: &Simulation) -> Vec<vector2::Vector2> {
+    return simulation.plants.iter().map(|p| p.location)
+        .chain(simulation.bugs.iter().map(|b| b.location))
+        .collect();
+}
+
+fn find_free_locations_around(simulation: &Simulation, point: vector2::Vector2) -> Vec<vector2::Vector2> {
+    let all_used_points = get_all_used_points(simulation);
+
+    let potential_places: Vec<vector2::Vector2> =
+        (-1..2).flat_map(|x: i32|
+            (-1..2).map(move |y: i32| (x, y)))
+        .map(|diff| vector2::add(diff, point))
+        .filter(|&(x, y)| x >= 0 && x < WIDTH as i32 && y >= 0 && y < HEIGHT as i32)
+        .collect();
+
+    return potential_places
+        .into_iter()
+        .filter(|point_around|
+            all_used_points
+                .iter()
+                .all(|used_point| used_point != point_around))
+        .collect();
+}
+
+fn move_towards(bug: &Bug, plant: Plant, free_locations: &Vec<vector2::Vector2>) -> vector2::Vector2 {
+    let direction = vector2::to_unit_vector(vector2::subtract(plant.location, bug.location));
+    let movement = direction;
+
+    let intended_location = vector2::add(bug.location, movement);
+
+    if free_locations.iter().all(|&l| l != intended_location) {
+        return pick_one(free_locations);
+    }
+
+    return intended_location;
+}
+
+fn pick_one(vectors: &Vec<vector2::Vector2>) -> vector2::Vector2 {
+    let mut rng = rand::thread_rng();
+
+    return vectors[rng.gen_range(0, vectors.len())];
+}
+
+fn find_next_location(simulation: &Simulation, bug: &Bug) -> Option<vector2::Vector2> {
+    let free_locations = find_free_locations_around(simulation, bug.location);
+    if free_locations.len() == 0 {
+        return None
+    }
+
+    return Some(match find_closest_plant(&bug, &simulation.plants) {
+        Some(plant) => move_towards(&bug, plant, &free_locations),
+        None => pick_one(&free_locations),
+    })
 }
 
 fn run_tick(simulation: &mut Simulation) {
     simulation.tick += 1;
 
-    let bugs = &simulation.bugs;
-    let plants = &simulation.plants;
+    let locations: Vec<vector2::Vector2> = simulation.bugs.iter()
+        .map(|bug|
+            match find_next_location(&simulation, bug) {
+                Some(location) => location,
+                None => bug.location
+            })
+        .collect();
 
-    for bug in bugs {
-        let nearby_plants: Vec<Plant> = plants.iter()
-            .filter(|p| sum_point(subtract(p.location, bug.location)) < bug.perception_distance)
-            .clone()
-            .collect();
+    for (i, location) in locations.iter().enumerate() {
+        simulation.bugs[i].location = *location;
     }
 }
 
-fn create_world_string(simulation: Simulation) {
+fn create_world_string(simulation: &Simulation) {
     let mut world = ndarray::Array2::<char>::from_elem((WIDTH, HEIGHT), ' ');
 
-    for bug in simulation.bugs {
-        world[[bug.location.0 as usize, bug.location.1 as usize]] = 'B';
+    for bug in &simulation.bugs {
+        world[[bug.location.0 as usize, bug.location.1 as usize]] = '*';
     }
 
-    for plant in simulation.plants {
+    for plant in &simulation.plants {
         world[[plant.location.0 as usize, plant.location.1 as usize]] = 'P';
     }
 
@@ -122,11 +191,15 @@ fn create_world_string(simulation: Simulation) {
         }
         print!("\n");
     }
+    println!("--------------")
 }
 
 fn main() {
     let mut simulation = create_simulation();
-    run_tick(&mut simulation);
 
-    create_world_string(simulation);
+    loop {
+        run_tick(&mut simulation);
+        create_world_string(&simulation);
+        thread::sleep(time::Duration::from_millis(1000 / 60));
+    }
 }
