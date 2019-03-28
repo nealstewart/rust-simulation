@@ -1,0 +1,9 @@
+[package]
+name = "simulation"
+version = "0.1.0"
+authors = ["Neal Stewart <nea@trustpilot.com>"]
+edition = "2018"
+
+[dependencies]
+rand = "0.6.5"
+ndarray = "0.12.1"
