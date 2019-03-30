@@ -38,7 +38,8 @@ fn create_first_bugs(size: &Size, total_count: usize) -> Vec<Bug> {
     return locations.iter()
         .map(|p| Bug {
             perception_distance: 10,
-            location: *p
+            location: *p,
+            life: 20
         })
         .collect();
 }
@@ -55,17 +56,18 @@ fn create_first_plants(size: &Size, bugs: &Vec<Bug>, total_count: usize) -> Vec<
     }
 
     return all_points.iter()
-        .skip(total_count)
+        .skip(bugs.len())
         .map(|p| Plant {
-            location: *p
+            location: *p,
+            life: 100,
         })
         .collect();
 }
 
 pub fn create_simulation() -> Simulation {
-    let size = (30, 30);
-    let bugs = create_first_bugs(&size, 60);
-    let plants = create_first_plants(&size, &bugs, 20);
+    let size = (30, 60);
+    let bugs = create_first_bugs(&size, 10);
+    let plants = create_first_plants(&size, &bugs, 100);
 
     Simulation {
         tick: 0,

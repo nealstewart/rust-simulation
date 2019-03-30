@@ -17,7 +17,14 @@ fn run_tick(simulation: &mut simulation::Simulation) {
     for bug in &mut bugs {
         bug.act(simulation);
     }
-    simulation.bugs = bugs;
+
+    let mut plants: Vec<plant::Plant> = simulation.plants.iter().cloned().collect();
+    for plant in &mut plants {
+        plant.act(simulation);
+    }
+
+    simulation.bugs = bugs.iter().filter(|b| b.life > 0).map(|b| *b).collect();
+    simulation.plants = simulation.plants.iter().filter(|b| b.life > 0).map(|b| *b).collect();
 }
 
 fn create_world_string(simulation: &simulation::Simulation) {
@@ -47,6 +54,6 @@ fn main() {
     loop {
         run_tick(&mut simulation);
         create_world_string(&simulation);
-        thread::sleep(time::Duration::from_millis(1000 / 15));
+        thread::sleep(time::Duration::from_millis(1000 / 60));
     }
 }

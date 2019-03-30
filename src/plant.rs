@@ -4,7 +4,8 @@ use crate::util::Actor;
 
 #[derive(Copy, Clone)]
 pub struct Plant {
-    pub location: Vector2
+    pub location: Vector2,
+    pub life: i16,
 }
 
 impl Actor for Plant {
