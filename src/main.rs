@@ -17,14 +17,19 @@ fn run_tick(simulation: &mut simulation::Simulation) {
     for bug in &mut bugs {
         bug.act(simulation);
     }
+    simulation.bugs = bugs.iter().filter(|b| b.life > 0).map(|b| *b).collect();
 
     let mut plants: Vec<plant::Plant> = simulation.plants.iter().cloned().collect();
     for plant in &mut plants {
         plant.act(simulation);
     }
+    simulation.plants = plants.iter().filter(|b| b.life > 0).map(|b| *b).collect();
 
-    simulation.bugs = bugs.iter().filter(|b| b.life > 0).map(|b| *b).collect();
-    simulation.plants = simulation.plants.iter().filter(|b| b.life > 0).map(|b| *b).collect();
+    let mut seeds: Vec<plant::Seed> = simulation.seeds.iter().cloned().collect();
+    for seed in &mut seeds {
+        seed.act(simulation);
+    }
+    simulation.seeds = seeds.iter().filter(|b| !b.seeded).map(|b| *b).collect();
 }
 
 fn create_world_string(simulation: &simulation::Simulation) {
@@ -33,6 +38,10 @@ fn create_world_string(simulation: &simulation::Simulation) {
 
     for bug in &simulation.bugs {
         world[[bug.location.0 as usize, bug.location.1 as usize]] = '*';
+    }
+
+    for seed in &simulation.seeds {
+        world[[seed.location.0 as usize, seed.location.1 as usize]] = '.';
     }
 
     for plant in &simulation.plants {
@@ -54,6 +63,6 @@ fn main() {
     loop {
         run_tick(&mut simulation);
         create_world_string(&simulation);
-        thread::sleep(time::Duration::from_millis(1000 / 60));
+        thread::sleep(time::Duration::from_millis(1000 / 3));
     }
 }

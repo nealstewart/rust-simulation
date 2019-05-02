@@ -2,12 +2,12 @@ use crate::bug::Bug;
 use crate::plant::Plant;
 use crate::vector2;
 use crate::simulation::Simulation;
-use crate::simulation::Size;
 use crate::util;
+use crate::simulation;
 
 impl util::Actor for Bug {
     fn act(&mut self, simulation: &mut Simulation) {
-        let neighbouring_spots = get_neighbouring_spots(simulation.size, self.location);
+        let neighbouring_spots = util::get_neighbouring_spots(simulation.size, self.location);
 
         let mut nearby_plants: Vec<&mut Plant> =
             simulation.plants.iter_mut()
@@ -35,9 +35,8 @@ impl util::Actor for Bug {
     }
 }
 
-
 fn find_closest_plant(bug: &Bug, plants: &Vec<Plant>) -> Option<Plant> {
-    let mut distances: Vec<(Plant, i32)> = plants
+    let mut distances: Vec<(Plant, vector2::VectorUnit)> = plants
         .into_iter()
         .cloned()
         .map(|p| (p, vector2::sum_point(vector2::subtract(p.location, bug.location))))
@@ -53,29 +52,10 @@ fn find_closest_plant(bug: &Bug, plants: &Vec<Plant>) -> Option<Plant> {
     return Some(distances[0].0);
 }
 
-fn get_all_used_points(simulation: &Simulation) -> Vec<vector2::Vector2> {
-    return simulation.plants.iter().map(|p| p.location)
-        .chain(simulation.bugs.iter().map(|b| b.location))
-        .collect();
-}
-
-fn is_within((x, y): vector2::Vector2, (width, height): Size) -> bool {
-    return x >= 0 && x < width as i32 && y >= 0 && y < height as i32
-}
-
-fn get_neighbouring_spots(size: Size, point: vector2::Vector2) -> Vec<vector2::Vector2> {
-    return
-        (-1..2).flat_map(|x: i32|
-            (-1..2).map(move |y: i32| (x, y)))
-        .map(|diff| vector2::add(diff, point))
-        .filter(|&p| is_within(p, size))
-        .collect();
-}
-
 fn find_free_locations_around(simulation: &Simulation, point: vector2::Vector2) -> Vec<vector2::Vector2> {
-    let all_used_points = get_all_used_points(simulation);
+    let all_used_points = simulation::get_all_used_points(simulation);
 
-    let potential_places: Vec<vector2::Vector2> = get_neighbouring_spots(simulation.size, point);
+    let potential_places: Vec<vector2::Vector2> = util::get_neighbouring_spots(simulation.size, point);
 
     return potential_places
         .into_iter()

@@ -1,6 +1,7 @@
+pub type VectorUnit = i32;
 pub type Vector2 = (i32, i32);
 
-pub fn sum_point(point: Vector2) -> i32 {
+pub fn sum_point(point: Vector2) -> VectorUnit {
     return point.0.abs() + point.1.abs();
 }
 
@@ -10,6 +11,10 @@ pub fn subtract(a: Vector2, b: Vector2) -> Vector2 {
 
 pub fn add(a: Vector2, b: Vector2) -> Vector2 {
     return (a.0 + b.0, a.1 + b.1);
+}
+
+pub fn divide(a: Vector2, b: VectorUnit) -> Vector2 {
+    return (a.0 / b, a.1 / b);
 }
 
 pub fn to_unit_vector(a: Vector2) -> Vector2 {
