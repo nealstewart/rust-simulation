@@ -5,6 +5,7 @@ use std::{thread, time};
 mod vector2;
 mod simulation;
 mod bug_act;
+mod plant_act;
 mod bug;
 mod plant;
 mod util;

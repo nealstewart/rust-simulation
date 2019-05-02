@@ -1,3 +1,4 @@
+use rand::Rng;
 use crate::bug::Bug;
 use crate::plant::Plant;
 use crate::vector2;
@@ -64,6 +65,19 @@ fn find_free_locations_around(simulation: &Simulation, point: vector2::Vector2) 
                 .iter()
                 .all(|used_point| used_point != point_around))
         .collect();
+}
+
+fn generate_time_until_lay_egg() -> i16 {
+    rand::thread_rng().gen_range(10, 19)
+}
+
+pub fn create_bug(location: &vector2::Vector2) -> Bug {
+    Bug {
+        perception_distance: 10,
+        location: *location,
+        life: 20,
+        time_until_lay_egg: generate_time_until_lay_egg()
+    }
 }
 
 fn move_towards(bug: &Bug, plant: Plant, free_locations: Vec<vector2::Vector2>) -> vector2::Vector2 {

@@ -1,6 +1,8 @@
 use rand::Rng;
+use crate::bug_act;
 use crate::bug::Bug;
 use crate::plant::Plant;
+use crate::plant_act;
 use crate::plant;
 use crate::vector2::Vector2;
 use crate::vector2;
@@ -45,11 +47,7 @@ fn create_first_bugs(size: &Size, total_count: usize) -> Vec<Bug> {
     }
 
     return locations.iter()
-        .map(|p| Bug {
-            perception_distance: 10,
-            location: *p,
-            life: 20
-        })
+        .map(bug_act::create_bug)
         .collect();
 }
 
@@ -66,11 +64,7 @@ fn create_first_plants(size: &Size, bugs: &Vec<Bug>, total_count: usize) -> Vec<
 
     return all_points.iter()
         .skip(bugs.len())
-        .map(|p| Plant {
-            location: *p,
-            life: 10,
-            time_since_last_seed: 0,
-        })
+        .map(plant_act::create_plant)
         .collect();
 }
 
