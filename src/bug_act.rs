@@ -8,7 +8,7 @@ use crate::util;
 use crate::simulation;
 
 const MINIMUM_TIME_SINCE_LAST_SEED: i16 = 40;
-const MAXIMUM_AGE_OF_BUG: i16 = 100;
+const MAXIMUM_AGE_OF_BUG: i16 = 30;
 
 fn should_lay_egg() -> bool {
     return rand::thread_rng().gen_range(0, 100) < 10;
