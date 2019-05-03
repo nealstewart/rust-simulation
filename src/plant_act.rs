@@ -1,7 +1,6 @@
 
 use rand::Rng;
-use crate::simulation::Simulation;
-use crate::simulation;
+use crate::simulation::{is_location_in_use, Simulation};
 use crate::simulation::Size;
 use crate::util::Actor;
 use crate::util;
@@ -11,23 +10,43 @@ use crate::plant::Plant;
 use crate::plant::Seed;
 
 const MINIMUM_TIME_SINCE_LAST_SEED: i16 = 40;
+const MAXIMUM_AGE_OF_PLANT: i16 = 100;
 
 fn should_seed() -> bool {
     return rand::thread_rng().gen_range(0, 100) < 10;
 }
 
+fn should_die() -> bool {
+    return rand::thread_rng().gen_range(0, 100) < 60;
+}
+
+pub fn is_dead(plant: &Plant) -> bool {
+    return plant.age > MAXIMUM_AGE_OF_PLANT && should_die();
+}
+
 impl Actor for Plant {
     fn act(&mut self, simulation: &mut Simulation) {
         self.time_since_last_seed += 1;
+        self.age += 1;
+
         if self.time_since_last_seed < MINIMUM_TIME_SINCE_LAST_SEED || !should_seed() {
             return
         }
 
-        let neighbouring_spaces = util::get_neighbouring_spots(simulation.size, self.location);
+        if is_dead(self) {
+            self.life = 0;
+        }
+
+        let neighbouring_spaces: Vec<vector2::Vector2> = util::get_neighbouring_spots(simulation.size, self.location)
+            .iter()
+            .filter(|s| !is_location_in_use(simulation, **s))
+            .cloned()
+            .collect();
+
         let mut seeds = (0..neighbouring_spaces.len()).map(|i| Seed {
             seeded: false,
             location: neighbouring_spaces[i],
-            velocity: vector2::times(vector2::subtract(neighbouring_spaces[i], self.location), rand::thread_rng().gen_range(1, 10))
+            velocity: vector2::times(vector2::subtract(neighbouring_spaces[i], self.location), rand::thread_rng().gen_range(1, 20))
         }).collect();
 
         simulation.seeds.append(&mut seeds);
@@ -40,6 +59,7 @@ pub fn create_plant(location: &vector2::Vector2) -> Plant {
         location: *location,
         life: 10,
         time_since_last_seed: 0,
+        age: 0
     }
 }
 
@@ -66,7 +86,6 @@ impl Actor for Seed{
             return
         }
 
-        let used_spots = simulation::get_all_used_points(simulation);
         self.velocity = vector2::divide(self.velocity, 2);
         self.location = constrain(vector2::add(self.location, self.velocity), simulation.size);
 
@@ -76,7 +95,7 @@ impl Actor for Seed{
 
         self.velocity = (0, 0);
 
-        if used_spots.iter().any(|s| *s == self.location) {
+        if is_location_in_use(simulation, self.location) {
             return
         }
 
@@ -84,7 +103,8 @@ impl Actor for Seed{
         simulation.plants.push(Plant {
             location: self.location,
             life: 4,
-            time_since_last_seed: 0
+            time_since_last_seed: 0,
+            age: 0
         })
     }
 }

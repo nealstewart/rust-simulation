@@ -1,7 +1,6 @@
 use rand::Rng;
 use crate::bug_act;
-use crate::bug::Bug;
-use crate::plant::Plant;
+use crate::bug;
 use crate::plant_act;
 use crate::plant;
 use crate::vector2::Vector2;
@@ -11,10 +10,11 @@ pub type Size = (usize, usize);
 
 pub struct Simulation {
     pub tick: u64,
-    pub plants: Vec<Plant>,
-    pub bugs: Vec<Bug>,
+    pub plants: Vec<plant::Plant>,
+    pub bugs: Vec<bug::Bug>,
     pub size: Size,
     pub seeds: Vec<plant::Seed>,
+    pub eggs: Vec<bug::Egg>,
 }
 
 fn get_unused_location(size: &Size, locations: &Vec<Vector2>) -> Vector2 {
@@ -30,13 +30,7 @@ fn get_unused_location(size: &Size, locations: &Vec<Vector2>) -> Vector2 {
     }
 }
 
-pub fn get_all_used_points(simulation: &Simulation) -> Vec<vector2::Vector2> {
-    return simulation.plants.iter().map(|p| p.location)
-        .chain(simulation.bugs.iter().map(|b| b.location))
-        .collect();
-}
-
-fn create_first_bugs(size: &Size, total_count: usize) -> Vec<Bug> {
+fn create_first_bugs(size: &Size, total_count: usize) -> Vec<bug::Bug> {
     let mut count = total_count;
     let mut locations = Vec::new();
 
@@ -51,7 +45,7 @@ fn create_first_bugs(size: &Size, total_count: usize) -> Vec<Bug> {
         .collect();
 }
 
-fn create_first_plants(size: &Size, bugs: &Vec<Bug>, total_count: usize) -> Vec<Plant> {
+fn create_first_plants(size: &Size, bugs: &Vec<bug::Bug>, total_count: usize) -> Vec<plant::Plant> {
     let mut count = total_count;
     let mut all_points: Vec<Vector2> = bugs.iter().map(|b| b.location).collect();
 
@@ -68,8 +62,23 @@ fn create_first_plants(size: &Size, bugs: &Vec<Bug>, total_count: usize) -> Vec<
         .collect();
 }
 
+pub fn is_location_in_use(simulation: &Simulation, location: vector2::Vector2) -> bool {
+    return
+            simulation.plants
+                .iter()
+                .map(|p| p.location)
+                .any(|s| s == location) ||
+            simulation.bugs.iter()
+                .map(|b| b.location)
+                .any(|s| s == location);
+}
+
+pub fn is_dead_world(simulation: &Simulation) -> bool {
+    return simulation.bugs.len() == 0 && simulation.eggs.len() == 0 && simulation.plants.len() == 0 && simulation.seeds.len() == 0;
+}
+
 pub fn create_simulation() -> Simulation {
-    let size = (30, 60);
+    let size = (40, 100);
     let bugs = create_first_bugs(&size, 20);
     let plants = create_first_plants(&size, &bugs, 20);
 
@@ -78,6 +87,7 @@ pub fn create_simulation() -> Simulation {
         bugs,
         plants,
         size,
-        seeds: Vec::new()
+        seeds: Vec::new(),
+        eggs: Vec::new()
     }
 }
