@@ -46,7 +46,7 @@ impl Actor for Plant {
         let mut seeds = (0..neighbouring_spaces.len()).map(|i| Seed {
             seeded: false,
             location: neighbouring_spaces[i],
-            velocity: vector2::times(vector2::subtract(neighbouring_spaces[i], self.location), rand::thread_rng().gen_range(1, 20))
+            velocity: vector2::times(vector2::subtract(neighbouring_spaces[i], self.location), rand::thread_rng().gen_range(1, 10))
         }).collect();
 
         simulation.seeds.append(&mut seeds);

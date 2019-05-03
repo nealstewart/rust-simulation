@@ -78,9 +78,9 @@ pub fn is_dead_world(simulation: &Simulation) -> bool {
 }
 
 pub fn create_simulation() -> Simulation {
-    let size = (40, 100);
-    let bugs = create_first_bugs(&size, 20);
-    let plants = create_first_plants(&size, &bugs, 20);
+    let size = (80, 50);
+    let bugs = create_first_bugs(&size, 40);
+    let plants = create_first_plants(&size, &bugs, 40);
 
     Simulation {
         tick: 0,
